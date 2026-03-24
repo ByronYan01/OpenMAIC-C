@@ -39,6 +39,7 @@ function AgentVoicePill({
   disabled?: boolean;
 }) {
   const updateAgent = useAgentRegistry((s) => s.updateAgent);
+  const ttsModelId = useSettingsStore((s) => s.ttsModelId);
   const ttsProvidersConfig = useSettingsStore((s) => s.ttsProvidersConfig);
   const resolved = resolveAgentVoice(agent, agentIndex, availableProviders);
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -109,6 +110,7 @@ function AgentVoicePill({
             text: previewText,
             audioId: 'voice-preview',
             ttsProviderId: providerId,
+            ttsModelId,
             ttsVoice: voiceId,
             ttsSpeed: 1,
             ttsApiKey: providerConfig?.apiKey,
@@ -129,7 +131,7 @@ function AgentVoicePill({
         setPreviewingId(null);
       }
     },
-    [previewingId, stopPreview, ttsProvidersConfig],
+    [previewingId, stopPreview, ttsProvidersConfig, ttsModelId],
   );
 
   // Cleanup on unmount
@@ -250,6 +252,7 @@ function TeacherVoicePill({
   disabled?: boolean;
 }) {
   const ttsProviderId = useSettingsStore((s) => s.ttsProviderId);
+  const ttsModelId = useSettingsStore((s) => s.ttsModelId);
   const ttsVoice = useSettingsStore((s) => s.ttsVoice);
   const setTTSProvider = useSettingsStore((s) => s.setTTSProvider);
   const setTTSVoice = useSettingsStore((s) => s.setTTSVoice);
@@ -321,6 +324,7 @@ function TeacherVoicePill({
             text: previewText,
             audioId: 'voice-preview',
             ttsProviderId: providerId,
+            ttsModelId,
             ttsVoice: voiceId,
             ttsSpeed: 1,
             ttsApiKey: providerConfig?.apiKey,
@@ -340,7 +344,7 @@ function TeacherVoicePill({
         setPreviewingId(null);
       }
     },
-    [previewingId, stopPreview, ttsProvidersConfig],
+    [previewingId, stopPreview, ttsProvidersConfig, ttsModelId],
   );
 
   useEffect(() => () => stopPreview(), [stopPreview]);

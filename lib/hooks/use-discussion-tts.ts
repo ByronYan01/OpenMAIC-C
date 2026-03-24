@@ -31,6 +31,7 @@ export function useDiscussionTTS({ enabled, agents, onAudioStateChange }: Discus
   const playbackSpeed = useSettingsStore((s) => s.playbackSpeed);
   // Global lecture voice — used as fallback for teacher agent
   const globalTtsProviderId = useSettingsStore((s) => s.ttsProviderId);
+  const globalTtsModelId = useSettingsStore((s) => s.ttsModelId);
   const globalTtsVoice = useSettingsStore((s) => s.ttsVoice);
 
   const queueRef = useRef<QueueItem[]>([]);
@@ -125,6 +126,7 @@ export function useDiscussionTTS({ enabled, agents, onAudioStateChange }: Discus
           text: item.text,
           audioId: item.partId,
           ttsProviderId: item.providerId,
+          ttsModelId: globalTtsModelId,
           ttsVoice: item.voiceId,
           ttsSpeed: ttsSpeed,
           ttsApiKey: providerConfig?.apiKey,
@@ -163,7 +165,7 @@ export function useDiscussionTTS({ enabled, agents, onAudioStateChange }: Discus
       onAudioStateChangeRef.current?.(item.agentId, 'idle');
       queueMicrotask(() => processQueueRef.current());
     }
-  }, [enabled, ttsMuted, ttsVolume, ttsProvidersConfig, ttsSpeed, playbackSpeed]);
+  }, [enabled, ttsMuted, ttsVolume, ttsProvidersConfig, ttsSpeed, playbackSpeed, globalTtsModelId]);
 
   processQueueRef.current = processQueue;
 

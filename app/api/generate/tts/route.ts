@@ -22,10 +22,12 @@ export const maxDuration = 30;
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { text, audioId, ttsProviderId, ttsVoice, ttsSpeed, ttsApiKey, ttsBaseUrl } = body as {
+    const { text, audioId, ttsProviderId, ttsModelId, ttsVoice, ttsSpeed, ttsApiKey, ttsBaseUrl } =
+      body as {
       text: string;
       audioId: string;
       ttsProviderId: TTSProviderId;
+      ttsModelId?: string;
       ttsVoice: string;
       ttsSpeed?: number;
       ttsApiKey?: string;
@@ -64,6 +66,7 @@ export async function POST(req: NextRequest) {
     // Build TTS config
     const config = {
       providerId: ttsProviderId,
+      model: ttsModelId?.trim() || undefined,
       voice: ttsVoice,
       speed: ttsSpeed ?? 1.0,
       apiKey,

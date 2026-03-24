@@ -22,8 +22,10 @@ export function ASRSettings({ selectedProviderId }: ASRSettingsProps) {
   const { t } = useI18n();
 
   const asrLanguage = useSettingsStore((state) => state.asrLanguage);
+  const asrModelId = useSettingsStore((state) => state.asrModelId);
   const asrProvidersConfig = useSettingsStore((state) => state.asrProvidersConfig);
   const setASRProviderConfig = useSettingsStore((state) => state.setASRProviderConfig);
+  const setASRModelId = useSettingsStore((state) => state.setASRModelId);
 
   const asrProvider = ASR_PROVIDERS[selectedProviderId] ?? ASR_PROVIDERS['openai-whisper'];
   const isServerConfigured = !!asrProvidersConfig[selectedProviderId]?.isServerConfigured;
@@ -105,6 +107,7 @@ export function ASRSettings({ selectedProviderId }: ASRSettingsProps) {
             formData.append('audio', audioBlob, 'recording.webm');
             formData.append('providerId', selectedProviderId);
             formData.append('language', asrLanguage);
+            if (asrModelId.trim()) formData.append('modelId', asrModelId.trim());
             const apiKeyValue = asrProvidersConfig[selectedProviderId]?.apiKey;
             if (apiKeyValue?.trim()) formData.append('apiKey', apiKeyValue);
             const baseUrlValue = asrProvidersConfig[selectedProviderId]?.baseUrl;
@@ -229,6 +232,22 @@ export function ASRSettings({ selectedProviderId }: ASRSettingsProps) {
           })()}
         </>
       )}
+
+      {/* Model ID */}
+      <div className="space-y-2">
+        <Label className="text-sm">{t('settings.modelId')}</Label>
+        <Input
+          name={`asr-model-id-${selectedProviderId}`}
+          autoComplete="off"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          placeholder={t('settings.modelIdPlaceholder')}
+          value={asrModelId}
+          onChange={(e) => setASRModelId(e.target.value)}
+          className="text-sm font-mono"
+        />
+      </div>
 
       {/* Test ASR */}
       <div className="space-y-2">

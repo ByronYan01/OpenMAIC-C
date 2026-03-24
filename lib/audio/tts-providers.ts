@@ -152,8 +152,8 @@ async function generateOpenAITTS(
   text: string,
 ): Promise<TTSGenerationResult> {
   const baseUrl = config.baseUrl || TTS_PROVIDERS['openai-tts'].defaultBaseUrl;
+  const model = config.model || 'gpt-4o-mini-tts';
 
-  // Use gpt-4o-mini-tts for best quality and intelligent realtime applications
   const response = await fetch(`${baseUrl}/audio/speech`, {
     method: 'POST',
     headers: {
@@ -161,7 +161,7 @@ async function generateOpenAITTS(
       'Content-Type': 'application/json; charset=utf-8',
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini-tts',
+      model,
       input: text,
       voice: config.voice,
       speed: config.speed || 1.0,
@@ -225,6 +225,7 @@ async function generateAzureTTS(
  */
 async function generateGLMTTS(config: TTSModelConfig, text: string): Promise<TTSGenerationResult> {
   const baseUrl = config.baseUrl || TTS_PROVIDERS['glm-tts'].defaultBaseUrl;
+  const model = config.model || 'glm-tts';
 
   const response = await fetch(`${baseUrl}/audio/speech`, {
     method: 'POST',
@@ -233,7 +234,7 @@ async function generateGLMTTS(config: TTSModelConfig, text: string): Promise<TTS
       'Content-Type': 'application/json; charset=utf-8',
     },
     body: JSON.stringify({
-      model: 'glm-tts',
+      model,
       input: text,
       voice: config.voice,
       speed: config.speed || 1.0,
@@ -268,6 +269,7 @@ async function generateGLMTTS(config: TTSModelConfig, text: string): Promise<TTS
  */
 async function generateQwenTTS(config: TTSModelConfig, text: string): Promise<TTSGenerationResult> {
   const baseUrl = config.baseUrl || TTS_PROVIDERS['qwen-tts'].defaultBaseUrl;
+  const model = config.model || 'qwen3-tts-flash';
 
   // Calculate speed: Qwen3 uses rate parameter from -500 to 500
   // speed 1.0 = rate 0, speed 2.0 = rate 500, speed 0.5 = rate -250
@@ -280,7 +282,7 @@ async function generateQwenTTS(config: TTSModelConfig, text: string): Promise<TT
       'Content-Type': 'application/json; charset=utf-8',
     },
     body: JSON.stringify({
-      model: 'qwen3-tts-flash',
+      model,
       input: {
         text,
         voice: config.voice,
@@ -383,12 +385,14 @@ export async function getCurrentTTSConfig(): Promise<TTSModelConfig> {
 
   // Lazy import to avoid circular dependency
   const { useSettingsStore } = await import('@/lib/store/settings');
-  const { ttsProviderId, ttsVoice, ttsSpeed, ttsProvidersConfig } = useSettingsStore.getState();
+  const { ttsProviderId, ttsModelId, ttsVoice, ttsSpeed, ttsProvidersConfig } =
+    useSettingsStore.getState();
 
   const providerConfig = ttsProvidersConfig?.[ttsProviderId];
 
   return {
     providerId: ttsProviderId,
+    model: ttsModelId,
     apiKey: providerConfig?.apiKey,
     baseUrl: providerConfig?.baseUrl,
     voice: ttsVoice,

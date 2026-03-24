@@ -38,9 +38,11 @@ export interface SettingsState {
 
   // Audio settings (new unified audio configuration)
   ttsProviderId: TTSProviderId;
+  ttsModelId: string;
   ttsVoice: string;
   ttsSpeed: number;
   asrProviderId: ASRProviderId;
+  asrModelId: string;
   asrLanguage: string;
 
   // Audio provider configurations
@@ -171,9 +173,11 @@ export interface SettingsState {
 
   // Audio actions
   setTTSProvider: (providerId: TTSProviderId) => void;
+  setTTSModelId: (modelId: string) => void;
   setTTSVoice: (voice: string) => void;
   setTTSSpeed: (speed: number) => void;
   setASRProvider: (providerId: ASRProviderId) => void;
+  setASRModelId: (modelId: string) => void;
   setASRLanguage: (language: string) => void;
   setTTSProviderConfig: (
     providerId: TTSProviderId,
@@ -257,9 +261,11 @@ const getDefaultProvidersConfig = (): ProvidersConfig => {
 // Initialize default audio config
 const getDefaultAudioConfig = () => ({
   ttsProviderId: 'browser-native-tts' as TTSProviderId,
+  ttsModelId: '',
   ttsVoice: 'default',
   ttsSpeed: 1.0,
   asrProviderId: 'browser-native' as ASRProviderId,
+  asrModelId: '',
   asrLanguage: 'zh',
   ttsProvidersConfig: {
     'openai-tts': { apiKey: '', baseUrl: '', enabled: true },
@@ -275,6 +281,30 @@ const getDefaultAudioConfig = () => ({
     'qwen-asr': { apiKey: '', baseUrl: '', enabled: false },
   } as Record<ASRProviderId, { apiKey: string; baseUrl: string; enabled: boolean }>,
 });
+
+function getDefaultTTSModelId(providerId: TTSProviderId): string {
+  switch (providerId) {
+    case 'openai-tts':
+      return 'gpt-4o-mini-tts';
+    case 'glm-tts':
+      return 'glm-tts';
+    case 'qwen-tts':
+      return 'qwen3-tts-flash';
+    default:
+      return '';
+  }
+}
+
+function getDefaultASRModelId(providerId: ASRProviderId): string {
+  switch (providerId) {
+    case 'openai-whisper':
+      return 'gpt-4o-mini-transcribe';
+    case 'qwen-asr':
+      return 'qwen3-asr-flash';
+    default:
+      return '';
+  }
+}
 
 // Initialize default PDF config
 const getDefaultPDFConfig = () => ({
@@ -595,13 +625,17 @@ export const useSettingsStore = create<SettingsState>()(
         // Audio actions
         setTTSProvider: (providerId) =>
           set((state) => {
-            // If switching provider, set default voice for that provider
+            // If switching provider, set default voice/model for that provider.
             const shouldUpdateVoice = state.ttsProviderId !== providerId;
+            const shouldUpdateModel = state.ttsProviderId !== providerId;
             return {
               ttsProviderId: providerId,
               ...(shouldUpdateVoice && { ttsVoice: DEFAULT_TTS_VOICES[providerId] }),
+              ...(shouldUpdateModel && { ttsModelId: getDefaultTTSModelId(providerId) }),
             };
           }),
+
+        setTTSModelId: (modelId) => set({ ttsModelId: modelId }),
 
         setTTSVoice: (voice) => set({ ttsVoice: voice }),
 
@@ -615,9 +649,12 @@ export const useSettingsStore = create<SettingsState>()(
             const isLanguageValid = supportedLanguages.includes(state.asrLanguage);
             return {
               asrProviderId: providerId,
+              asrModelId: getDefaultASRModelId(providerId),
               ...(isLanguageValid ? {} : { asrLanguage: supportedLanguages[0] || 'auto' }),
             };
           }),
+
+        setASRModelId: (modelId) => set({ asrModelId: modelId }),
 
         setASRLanguage: (language) => set({ asrLanguage: language }),
 
@@ -897,7 +934,9 @@ export const useSettingsStore = create<SettingsState>()(
               // === Auto-select / auto-enable (only on first run) ===
               let autoTtsProvider: TTSProviderId | undefined;
               let autoTtsVoice: string | undefined;
+              let autoTtsModel: string | undefined;
               let autoAsrProvider: ASRProviderId | undefined;
+              let autoAsrModel: string | undefined;
               let autoPdfProvider: PDFProviderId | undefined;
               let autoImageProvider: ImageProviderId | undefined;
               let autoImageModel: string | undefined;
@@ -920,6 +959,7 @@ export const useSettingsStore = create<SettingsState>()(
                 ) {
                   autoTtsProvider = serverTtsIds[0];
                   autoTtsVoice = DEFAULT_TTS_VOICES[autoTtsProvider] || 'default';
+                  autoTtsModel = getDefaultTTSModelId(autoTtsProvider);
                 }
 
                 // ASR: select first server provider if current is not server-configured
@@ -929,6 +969,7 @@ export const useSettingsStore = create<SettingsState>()(
                   !newASRConfig[state.asrProviderId]?.isServerConfigured
                 ) {
                   autoAsrProvider = serverAsrIds[0];
+                  autoAsrModel = getDefaultASRModelId(autoAsrProvider);
                 }
 
                 // Image: first server provider
@@ -994,7 +1035,9 @@ export const useSettingsStore = create<SettingsState>()(
                   ttsProviderId: autoTtsProvider,
                   ttsVoice: autoTtsVoice,
                 }),
+                ...(autoTtsModel !== undefined && { ttsModelId: autoTtsModel }),
                 ...(autoAsrProvider && { asrProviderId: autoAsrProvider }),
+                ...(autoAsrModel !== undefined && { asrModelId: autoAsrModel }),
                 ...(autoImageProvider && {
                   imageProviderId: autoImageProvider,
                 }),
@@ -1058,6 +1101,12 @@ export const useSettingsStore = create<SettingsState>()(
         if (!state.ttsProvidersConfig || !state.asrProvidersConfig) {
           const defaultAudioConfig = getDefaultAudioConfig();
           Object.assign(state, defaultAudioConfig);
+        }
+        if ((state as Record<string, unknown>).ttsModelId === undefined) {
+          (state as Record<string, unknown>).ttsModelId = getDefaultAudioConfig().ttsModelId;
+        }
+        if ((state as Record<string, unknown>).asrModelId === undefined) {
+          (state as Record<string, unknown>).asrModelId = getDefaultAudioConfig().asrModelId;
         }
 
         // Add default PDF config if missing

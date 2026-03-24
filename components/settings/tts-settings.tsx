@@ -24,8 +24,10 @@ export function TTSSettings({ selectedProviderId }: TTSSettingsProps) {
 
   const ttsVoice = useSettingsStore((state) => state.ttsVoice);
   const ttsSpeed = useSettingsStore((state) => state.ttsSpeed);
+  const ttsModelId = useSettingsStore((state) => state.ttsModelId);
   const ttsProvidersConfig = useSettingsStore((state) => state.ttsProvidersConfig);
   const setTTSProviderConfig = useSettingsStore((state) => state.setTTSProviderConfig);
+  const setTTSModelId = useSettingsStore((state) => state.setTTSModelId);
   const activeProviderId = useSettingsStore((state) => state.ttsProviderId);
 
   // When testing a non-active provider, use that provider's default voice
@@ -67,6 +69,7 @@ export function TTSSettings({ selectedProviderId }: TTSSettingsProps) {
       await startPreview({
         text: testText,
         providerId: selectedProviderId,
+        modelId: ttsModelId,
         voice: effectiveVoice,
         speed: ttsSpeed,
         apiKey: ttsProvidersConfig[selectedProviderId]?.apiKey,
@@ -177,6 +180,22 @@ export function TTSSettings({ selectedProviderId }: TTSSettingsProps) {
           })()}
         </>
       )}
+
+      {/* Model ID */}
+      <div className="space-y-2">
+        <Label className="text-sm">{t('settings.modelId')}</Label>
+        <Input
+          name={`tts-model-id-${selectedProviderId}`}
+          autoComplete="off"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          placeholder={t('settings.ttsModelPlaceholder')}
+          value={ttsModelId}
+          onChange={(e) => setTTSModelId(e.target.value)}
+          className="text-sm font-mono"
+        />
+      </div>
 
       {/* Test TTS */}
       <div className="space-y-2">

@@ -4,6 +4,9 @@ CLAUDE.local.md
 .claude
 .superpowers
 
+
+.pnpm-store
+
 # dependencies
 /node_modules
 /openclaw/node_modules
