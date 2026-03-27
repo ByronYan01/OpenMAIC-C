@@ -126,7 +126,18 @@ export function SceneSidebar({
             className="flex items-center gap-2 cursor-pointer rounded-lg px-1.5 -mx-1.5 py-1 -my-1 hover:bg-gray-100/80 dark:hover:bg-gray-800/60 active:scale-[0.97] transition-all duration-150"
             title={t('generation.backToHome')}
           >
-            <img src="/logo-horizontal.png" alt="OpenMAIC" className="h-6" />
+            {/* <img src="/logo-horizontal.png" alt={t('home.brandName')} className="h-6" /> */}
+            <span
+              aria-label={t('home.brandName')}
+              className="inline-flex items-end gap-0.5 drop-shadow-[0_6px_14px_rgba(124,58,237,0.1)]"
+            >
+              <span className="bg-gradient-to-b from-slate-900 via-indigo-900 to-violet-700 bg-clip-text text-lg font-extrabold tracking-[0.04em] text-transparent">
+                深思
+              </span>
+              <span className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-500 bg-clip-text text-lg font-extrabold tracking-[0.04em] text-transparent">
+                课堂
+              </span>
+            </span>
           </button>
           <button
             onClick={() => onCollapseChange(true)}

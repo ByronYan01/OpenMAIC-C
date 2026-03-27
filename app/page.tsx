@@ -465,7 +465,6 @@ function HomePage() {
         />
       </div>
 
-      {/* ═══ Hero section: title + input (centered, wider) ═══ */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -475,10 +474,8 @@ function HomePage() {
           classrooms.length === 0 ? 'justify-center min-h-[calc(100dvh-8rem)]' : 'mt-[10vh]',
         )}
       >
-        {/* ── Logo ── */}
-        <motion.img
-          src="/logo-horizontal.png"
-          alt="OpenMAIC"
+        {/* Logo */}
+        <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{
@@ -487,15 +484,34 @@ function HomePage() {
             stiffness: 200,
             damping: 20,
           }}
-          className="h-12 md:h-16 mb-2 -ml-2 md:-ml-3"
-        />
+          className="mb-3 flex items-center justify-center"
+        >
+          {/*
+          <img
+            src="/logo-horizontal.png"
+            alt={t('home.brandName')}
+            className="h-12 md:h-16 mb-2 -ml-2 md:-ml-3"
+          />
+          */}
+          <div
+            aria-label={t('home.brandName')}
+            className="flex items-end gap-1 md:gap-1.5 drop-shadow-[0_8px_20px_rgba(124,58,237,0.12)]"
+          >
+            <span className="bg-gradient-to-b from-slate-900 via-indigo-900 to-violet-700 bg-clip-text text-4xl font-extrabold tracking-[0.04em] text-transparent md:text-6xl">
+              深思
+            </span>
+            <span className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-500 bg-clip-text text-4xl font-extrabold tracking-[0.04em] text-transparent md:text-6xl">
+              课堂
+            </span>
+          </div>
+        </motion.div>
 
         {/* ── Slogan ── */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.25 }}
-          className="text-sm text-muted-foreground/60 mb-8"
+          className="mb-8 text-sm text-slate-500/80 dark:text-slate-400/85"
         >
           {t('home.slogan')}
         </motion.p>
@@ -668,9 +684,9 @@ function HomePage() {
       )}
 
       {/* Footer — flows with content, at the very end */}
-      <div className="mt-auto pt-12 pb-4 text-center text-xs text-muted-foreground/40">
-        OpenMAIC Open Source Project
-      </div>
+      {/* <div className="mt-auto pt-12 pb-4 text-center text-xs text-muted-foreground/40">
+        {t('home.productCaption')}
+      </div> */}
     </div>
   );
 }

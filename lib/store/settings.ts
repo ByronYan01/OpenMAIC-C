@@ -19,6 +19,7 @@ import { WEB_SEARCH_PROVIDERS } from '@/lib/web-search/constants';
 import type { WebSearchProviderId } from '@/lib/web-search/types';
 import { createLogger } from '@/lib/logger';
 import { validateProvider, validateModel } from '@/lib/store/settings-validation';
+import type { ModelInfo } from '@/lib/types/provider';
 
 const log = createLogger('Settings');
 
@@ -55,6 +56,7 @@ export interface SettingsState {
       enabled: boolean;
       isServerConfigured?: boolean;
       serverBaseUrl?: string;
+      serverModels?: string[];
     }
   >;
 
@@ -66,6 +68,7 @@ export interface SettingsState {
       enabled: boolean;
       isServerConfigured?: boolean;
       serverBaseUrl?: string;
+      serverModels?: string[];
     }
   >;
 
@@ -460,6 +463,38 @@ function ensureBuiltInVideoProviders(state: Partial<SettingsState>): void {
   });
 }
 
+function createServerModelInfo(modelId: string): ModelInfo {
+  return {
+    id: modelId,
+    name: modelId,
+    contextWindow: 128000,
+    outputWindow: 4096,
+    capabilities: {
+      streaming: true,
+      tools: true,
+      vision: false,
+    },
+  };
+}
+
+function mergeServerRestrictedModels(
+  currentModels: ModelInfo[],
+  serverModels?: string[],
+): ModelInfo[] {
+  if (!serverModels?.length) return currentModels;
+
+  const byId = new Map(currentModels.map((model) => [model.id, model]));
+  for (const modelId of serverModels) {
+    if (!byId.has(modelId)) {
+      byId.set(modelId, createServerModelInfo(modelId));
+    }
+  }
+
+  return serverModels
+    .map((modelId) => byId.get(modelId))
+    .filter((model): model is ModelInfo => !!model);
+}
+
 // Migrate from old localStorage format
 const migrateFromOldStorage = () => {
   if (typeof window === 'undefined') return null;
@@ -765,8 +800,8 @@ export const useSettingsStore = create<SettingsState>()(
             if (!res.ok) return;
             const data = (await res.json()) as {
               providers: Record<string, { models?: string[]; baseUrl?: string }>;
-              tts: Record<string, { baseUrl?: string }>;
-              asr: Record<string, { baseUrl?: string }>;
+              tts: Record<string, { models?: string[]; baseUrl?: string }>;
+              asr: Record<string, { models?: string[]; baseUrl?: string }>;
               pdf: Record<string, { baseUrl?: string }>;
               image: Record<string, { baseUrl?: string }>;
               video: Record<string, { baseUrl?: string }>;
@@ -793,10 +828,9 @@ export const useSettingsStore = create<SettingsState>()(
                 const key = pid as ProviderId;
                 if (newProvidersConfig[key]) {
                   const currentModels = newProvidersConfig[key].models;
-                  // When server specifies allowed models, filter the models list
-                  const filteredModels = info.models?.length
-                    ? currentModels.filter((m) => info.models!.includes(m.id))
-                    : currentModels;
+                  // Keep server-restricted behavior, but synthesize unknown model IDs
+                  // so OpenAI-compatible private models don't disappear on refresh.
+                  const filteredModels = mergeServerRestrictedModels(currentModels, info.models);
                   newProvidersConfig[key] = {
                     ...newProvidersConfig[key],
                     isServerConfigured: true,
@@ -816,6 +850,7 @@ export const useSettingsStore = create<SettingsState>()(
                     ...newTTSConfig[key],
                     isServerConfigured: false,
                     serverBaseUrl: undefined,
+                    serverModels: undefined,
                   };
                 }
               }
@@ -826,6 +861,7 @@ export const useSettingsStore = create<SettingsState>()(
                     ...newTTSConfig[key],
                     isServerConfigured: true,
                     serverBaseUrl: info.baseUrl,
+                    serverModels: info.models,
                   };
                 }
               }
@@ -839,6 +875,7 @@ export const useSettingsStore = create<SettingsState>()(
                     ...newASRConfig[key],
                     isServerConfigured: false,
                     serverBaseUrl: undefined,
+                    serverModels: undefined,
                   };
                 }
               }
@@ -849,6 +886,7 @@ export const useSettingsStore = create<SettingsState>()(
                     ...newASRConfig[key],
                     isServerConfigured: true,
                     serverBaseUrl: info.baseUrl,
+                    serverModels: info.models,
                   };
                 }
               }
@@ -1015,10 +1053,11 @@ export const useSettingsStore = create<SettingsState>()(
               }
 
               const validLLMModel = validLLMProvider
-                ? validateModel(
-                    state.modelId,
-                    newProvidersConfig[validLLMProvider as ProviderId]?.models ?? [],
-                  )
+                ? (() => {
+                    const llmModels =
+                      newProvidersConfig[validLLMProvider as ProviderId]?.models ?? [];
+                    return validateModel(state.modelId, llmModels) || llmModels[0]?.id || '';
+                  })()
                 : '';
               const imageModels =
                 IMAGE_PROVIDERS[validImageProvider as ImageProviderId]?.models ?? [];
@@ -1075,7 +1114,9 @@ export const useSettingsStore = create<SettingsState>()(
                 ) {
                   autoTtsProvider = serverTtsIds[0];
                   autoTtsVoice = DEFAULT_TTS_VOICES[autoTtsProvider] || 'default';
-                  autoTtsModel = getDefaultTTSModelId(autoTtsProvider);
+                  autoTtsModel =
+                    newTTSConfig[autoTtsProvider]?.serverModels?.[0] ||
+                    getDefaultTTSModelId(autoTtsProvider);
                 }
 
                 // ASR: select first server provider if current is not server-configured
@@ -1085,7 +1126,9 @@ export const useSettingsStore = create<SettingsState>()(
                   !newASRConfig[state.asrProviderId]?.isServerConfigured
                 ) {
                   autoAsrProvider = serverAsrIds[0];
-                  autoAsrModel = getDefaultASRModelId(autoAsrProvider);
+                  autoAsrModel =
+                    newASRConfig[autoAsrProvider]?.serverModels?.[0] ||
+                    getDefaultASRModelId(autoAsrProvider);
                 }
 
                 // Image: first server provider
@@ -1137,6 +1180,22 @@ export const useSettingsStore = create<SettingsState>()(
                 }
               }
 
+              const normalizedTtsModelId =
+                newTTSConfig[state.ttsProviderId]?.serverModels?.length &&
+                !newTTSConfig[state.ttsProviderId]?.serverModels?.includes(state.ttsModelId)
+                  ? newTTSConfig[state.ttsProviderId]?.serverModels?.[0] || ''
+                  : state.ttsModelId ||
+                    newTTSConfig[state.ttsProviderId]?.serverModels?.[0] ||
+                    '';
+
+              const normalizedAsrModelId =
+                newASRConfig[state.asrProviderId]?.serverModels?.length &&
+                !newASRConfig[state.asrProviderId]?.serverModels?.includes(state.asrModelId)
+                  ? newASRConfig[state.asrProviderId]?.serverModels?.[0] || ''
+                  : state.asrModelId ||
+                    newASRConfig[state.asrProviderId]?.serverModels?.[0] ||
+                    '';
+
               return {
                 providersConfig: newProvidersConfig,
                 ttsProvidersConfig: newTTSConfig,
@@ -1155,8 +1214,14 @@ export const useSettingsStore = create<SettingsState>()(
                   ttsProviderId: validTTSProvider as TTSProviderId,
                   ttsVoice: validTTSVoice,
                 }),
+                ...(normalizedTtsModelId !== state.ttsModelId && {
+                  ttsModelId: normalizedTtsModelId,
+                }),
                 ...(validASRProvider !== state.asrProviderId && {
                   asrProviderId: validASRProvider as ASRProviderId,
+                }),
+                ...(normalizedAsrModelId !== state.asrModelId && {
+                  asrModelId: normalizedAsrModelId,
                 }),
                 ...(validPDFProvider !== state.pdfProviderId && {
                   pdfProviderId: validPDFProvider as PDFProviderId,

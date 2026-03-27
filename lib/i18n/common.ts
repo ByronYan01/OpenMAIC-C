@@ -6,7 +6,9 @@ export const commonZhCN = {
     loading: '加载中...',
   },
   home: {
-    slogan: 'Generative Learning in Multi-Agent Interactive Classroom',
+    brandName: '深思课堂',
+    slogan: '多智能体互动课堂生成式学习平台',
+    productCaption: '深思课堂开源项目',
     greeting: '嗨，',
   },
   toolbar: {
@@ -47,7 +49,9 @@ export const commonEnUS = {
     loading: 'Loading...',
   },
   home: {
-    slogan: 'Generative Learning in Multi-Agent Interactive Classroom',
+    brandName: '深思课堂',
+    slogan: 'Generative Learning for Multi-Agent Interactive Classrooms',
+    productCaption: 'DeepThink Classroom Open Source Project',
     greeting: 'Hi, ',
   },
   toolbar: {

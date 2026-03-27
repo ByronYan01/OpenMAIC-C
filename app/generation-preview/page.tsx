@@ -646,7 +646,9 @@ function GenerationPreviewContent() {
 
       const userProfile =
         currentSession.requirements.userNickname || currentSession.requirements.userBio
-          ? `Student: ${currentSession.requirements.userNickname || 'Unknown'}${currentSession.requirements.userBio ? ` — ${currentSession.requirements.userBio}` : ''}`
+          ? `${t('settings.agentRoles.student')}: ${
+              currentSession.requirements.userNickname || t('chat.unknown')
+            }${currentSession.requirements.userBio ? ` - ${currentSession.requirements.userBio}` : ''}`
           : undefined;
 
       // Generate ONLY the first scene
