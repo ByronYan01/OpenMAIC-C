@@ -1,5 +1,5 @@
 # ---- Stage 1: Base ----
-FROM node:22-alpine AS base
+FROM harbor.xzinfra.com/base/node:22-alpine AS base
 
 RUN apk add --no-cache libc6-compat
 RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
@@ -27,7 +27,7 @@ COPY . .
 RUN pnpm build
 
 # ---- Stage 4: Runner ----
-FROM node:22-alpine AS runner
+FROM harbor.xzinfra.com/base/node:22-alpine AS runner
 
 WORKDIR /app
 
